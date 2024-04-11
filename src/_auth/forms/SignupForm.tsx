@@ -15,6 +15,7 @@ import { SignupValidation } from "@/lib/validation"
 import { z } from "zod"
 import { Loader } from "lucide-react"
 import { Link } from "react-router-dom"
+import { createUserAccount } from "@/lib/firebase/api"
 
 const SignupForm = () => {
 	const isLoading = false
@@ -29,7 +30,12 @@ const SignupForm = () => {
 		},
 	})
 
-	async function onSubmit(values: z.infer<typeof SignupValidation>) {}
+	async function onSubmit(values: z.infer<typeof SignupValidation>) {
+		const newUser = await createUserAccount(values)
+
+		console.log(values)
+		console.log(newUser)
+	}
 
 	return (
 		<Form {...form}>
@@ -46,7 +52,7 @@ const SignupForm = () => {
 						name="name"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Nombre</FormLabel>
+								<FormLabel className="shad-form_label">Nombre</FormLabel>
 								<FormControl>
 									<Input type="text" className="shad-input" {...field} />
 								</FormControl>
@@ -59,7 +65,7 @@ const SignupForm = () => {
 						name="username"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Usuario</FormLabel>
+								<FormLabel className="shad-form_label">Usuario</FormLabel>
 								<FormControl>
 									<Input type="text" className="shad-input" {...field} />
 								</FormControl>
@@ -72,7 +78,7 @@ const SignupForm = () => {
 						name="email"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Correo</FormLabel>
+								<FormLabel className="shad-form_label">Correo</FormLabel>
 								<FormControl>
 									<Input type="email" className="shad-input" {...field} />
 								</FormControl>
@@ -85,7 +91,7 @@ const SignupForm = () => {
 						name="password"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Contraseña</FormLabel>
+								<FormLabel className="shad-form_label">Contraseña</FormLabel>
 								<FormControl>
 									<Input type="password" className="shad-input" {...field} />
 								</FormControl>
