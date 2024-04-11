@@ -1,6 +1,6 @@
 {
-    "printWidth": 100,
-    "semi": false,
+    "printWidth": 60,
+    "semi": true,
     "singleQuote": false,
     "jsxSingleQuote": false,
     "quoteProps": "consistent",
