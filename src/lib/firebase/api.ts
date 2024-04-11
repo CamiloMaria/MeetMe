@@ -8,16 +8,48 @@ export async function createUserAccount(user: INewUser) {
         const newAccount = await createUserWithEmailAndPassword(auth, user.email, user.password);
 
         if (newAccount) {
+            const userId = newAccount.user.uid;
+
             const userDoc = {
-                uuid: newAccount.user?.uid,
+                accountId: userId,
+                email: user.email,
                 name: user.name,
                 username: user.username,
-                email: user.email,
+                bio: "",
+                likedPosts: [],
+                posts: [],
+                saves: [],
+                imageId: "",
+                imageUrl: "",
                 createdAt: new Date().toISOString(),
             }
 
-            await setDoc(doc(fireStore, "users", newAccount.user?.uid), userDoc);
+            await setDoc(doc(fireStore, "users", userId), userDoc);
             localStorage.setItem("user", JSON.stringify(userDoc));
+
+            // const postId = new Date().getTime().toString();
+        
+            // const postDoc = {
+            //     postId: postId,
+            //     creator: userId,
+            //     likes: 0,
+            //     caption: '',
+            //     tags: [],
+            //     imageId: '',
+            //     imageUrl: '',
+            //     location: '',
+            //     saved: [],
+            //     createdAt: new Date().toISOString(),
+            // }
+
+            // await setDoc(doc(fireStore, "posts", postId), postDoc);
+
+            // const saves = {
+            //     user: userId,
+            //     savedPost: postId,
+            // }
+
+            // await setDoc(doc(fireStore, "saves", userId), saves);
         }
 
         return newAccount;
