@@ -114,3 +114,13 @@ export async function getCurrentUser(): Promise<IUser> {
         throw error;
     }
 }
+
+export async function signOutAccount() {
+	try {
+		await auth.signOut()
+		localStorage.removeItem("user")
+	} catch (error) {
+		console.log(error)
+		return error
+	}
+}
