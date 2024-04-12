@@ -4,6 +4,7 @@ import { useSignOutAccount } from "@/lib/react-query/queriesAndMutation";
 import { INavLink } from "@/types";
 import React, { useEffect } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Button } from "../ui/button";
 
 const LeftSidebar = () => {
 	const { pathname } = useLocation();
@@ -59,6 +60,11 @@ const LeftSidebar = () => {
 					})}
 				</ul>
 			</div>
+
+			<Button variant="ghost" className="shad-button_ghost" onClick={() => signOut()}>
+				<img src="/assets/icons/logout.svg" alt="logout" />
+				<p className="small-medium lg:base-medium">Logout</p>
+			</Button>
 		</nav>
 	);
 };
