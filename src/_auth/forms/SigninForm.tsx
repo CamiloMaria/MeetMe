@@ -15,7 +15,7 @@ import { SigninValidation } from "@/lib/validation";
 import { z } from "zod";
 import { Loader } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignInAccount } from "@/lib/react-query/queriesAndMutation";
+import { useSignInAccount } from "@/lib/react-query/queries";
 import { useUserContext } from "@/context/AuthContext";
 
 const SigninForm = () => {

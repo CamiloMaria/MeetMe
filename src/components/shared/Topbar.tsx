@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
-import { useSignOutAccount } from "@/lib/react-query/queriesAndMutation";
+import { useSignOutAccount } from "@/lib/react-query/queries";
 import { useEffect } from "react";
 import { useUserContext } from "@/context/AuthContext";
 

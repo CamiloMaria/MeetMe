@@ -15,7 +15,7 @@ import { SignupValidation } from "@/lib/validation";
 import { z } from "zod";
 import { Loader } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCreateUserAccount, useSignInAccount } from "@/lib/react-query/queriesAndMutation";
+import { useCreateUserAccount, useSignInAccount } from "@/lib/react-query/queries";
 import { useUserContext } from "@/context/AuthContext";
 
 const SignupForm = () => {
