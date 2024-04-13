@@ -1,7 +1,7 @@
-import { INewPost, INewUser, IUser } from "@/types";
+import { INewPost, INewUser, IPost, ISaves, IUser } from "@/types";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth, fireStore, storage } from "./config";
-import { collection, doc, getDocs, query, setDoc, where } from "firebase/firestore";
+import { collection, doc, getDocs, limit, orderBy, query, setDoc, where } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 export async function createUserAccount(user: INewUser) {
@@ -30,33 +30,6 @@ export async function createUserAccount(user: INewUser) {
 
 		await saveToDatabase<any>("users", userId, userDoc);
 		localStorage.setItem("user", JSON.stringify(userDoc));
-
-		// const postId = new Date().getTime().toString()
-
-		// const postDoc = {
-		// 	postId: postId,
-		// 	creator: userId,
-		// 	likes: 0,
-		// 	caption: "",
-		// 	tags: [],
-		// 	imageId: "",
-		// 	imageUrl: "",
-		// 	location: "",
-		// 	saved: [],
-		// 	createdAt: new Date().toISOString(),
-		// }
-
-		// await saveToDatabase("posts", postId, postDoc)
-
-		// const savesId = new Date().getTime().toString()
-
-		// const saves = {
-		// 	savesId,
-		// 	user: userId,
-		// 	savedPost: postId,
-		// }
-
-		// await saveToDatabase("saves", userId, saves)
 
 		return newAccount;
 	} catch (error) {
@@ -109,7 +82,24 @@ export async function getCurrentUser(): Promise<IUser> {
 		}
 
 		const userDoc = querySnapshot.docs[0].data() as IUser;
-		console.log(userDoc);
+
+		return userDoc;
+	} catch (error) {
+		throw error;
+	}
+}
+
+export async function getUserById(userId: string): Promise<IUser> {
+	try {
+		const usersRef = collection(fireStore, "users");
+		const q = query(usersRef, where("accountId", "==", userId));
+		const querySnapshot = await getDocs(q);
+
+		if (querySnapshot.empty) {
+			throw new Error("No document found for the user.");
+		}
+
+		const userDoc = querySnapshot.docs[0].data() as IUser;
 
 		return userDoc;
 	} catch (error) {
@@ -126,6 +116,64 @@ export async function signOutAccount() {
 	}
 }
 
+export async function getUserPosts(userId?: string) {
+	if (!userId) return;
+
+	try {
+		const postsRef = collection(fireStore, "posts");
+		const q = query(postsRef, where("creator", "==", userId));
+		const querySnapshot = await getDocs(q);
+
+		if (querySnapshot.empty) {
+			throw new Error("No posts found");
+		}
+
+		const posts = querySnapshot.docs.map((doc) => doc.data()) as IPost[];
+
+		return posts;
+	} catch (error) {
+		console.log(error);
+	}
+}
+
+export async function getRecentPosts() {
+	try {
+		const postsRef = collection(fireStore, "posts");
+		const q = query(postsRef, orderBy("createdAt", "desc"), limit(20));
+		const querySnapshot = await getDocs(q);
+
+		if (querySnapshot.empty) {
+			throw new Error("No posts found");
+		}
+
+		const posts = querySnapshot.docs.map((doc) => doc.data()) as IPost[];
+
+		return posts;
+	} catch (error) {
+		throw error;
+	}
+}
+
+export async function getPostById(postId?: string) {
+	if (!postId) throw Error;
+
+	try {
+		const postRef = collection(fireStore, "posts");
+		const q = query(postRef, where("postId", "==", postId));
+		const querySnapshot = await getDocs(q);
+
+		if (querySnapshot.empty) {
+			throw new Error("No post found");
+		}
+
+		const postDoc = querySnapshot.docs[0];
+
+		return postDoc.data() as IPost;
+	} catch (error) {
+		console.log(error);
+	}
+}
+
 export async function createPost(post: INewPost) {
 	try {
 		const uploadedFile = await uploadFile(post.file[0]);
@@ -134,20 +182,19 @@ export async function createPost(post: INewPost) {
 			throw new Error("Failed to upload file");
 		}
 
-		// Check if the file was uploaded but URL is missing, then delete the file
-        if (!uploadedFile || !uploadedFile.url) {
-            if (uploadedFile && uploadedFile.id) {
-                await deleteFile(uploadedFile.id, post.file[0].name);
-            }
-            throw new Error("Failed to upload file or get URL");
-        }
+		if (!uploadedFile || !uploadedFile.url) {
+			if (uploadedFile && uploadedFile.id) {
+				await deleteFile(uploadedFile.id, post.file[0].name);
+			}
+			throw new Error("Failed to upload file or get URL");
+		}
 
 		const postId = new Date().getTime().toString();
 		const tags = post.tags?.replace(/ /g, "").split(",") || [];
 		const postDoc = {
 			postId,
 			creator: post.userId,
-			likes: 0,
+			likes: [],
 			caption: post.caption,
 			tags,
 			imageId: uploadedFile.id,
@@ -160,6 +207,61 @@ export async function createPost(post: INewPost) {
 		await saveToDatabase("posts", postId, postDoc);
 
 		return postDoc;
+	} catch (error) {
+		throw error;
+	}
+}
+
+export async function likePost(postId: string, likesArray: string[]) {
+	try {
+		await saveToDatabase("posts", postId, { likes: likesArray });
+
+		return { status: "ok" };
+	} catch (error) {
+		throw error;
+	}
+}
+
+export async function getSavedPosts(userId: string) {
+	try {
+		const savesRef = collection(fireStore, "saves");
+		const q = query(savesRef, where("user", "==", userId));
+		const querySnapshot = await getDocs(q);
+
+		if (querySnapshot.empty) {
+			throw new Error("No saved posts found");
+		}
+
+		const savedPosts = querySnapshot.docs.map((doc) => doc.data()) as ISaves[];
+
+		return savedPosts;
+	} catch (error) {
+		throw error;
+	}
+}
+
+export async function savePost(userId: string, postId: string) {
+	try {
+		const savesId = new Date().getTime().toString();
+		const saves = {
+			savesId,
+			user: userId,
+			savedPost: postId,
+		};
+
+		await saveToDatabase("saves", userId, saves);
+
+		return saves;
+	} catch (error) {
+		throw error;
+	}
+}
+
+export async function deleteSavedPost(saveId: string) {
+	try {
+		await saveToDatabase("saves", saveId, {});
+
+		return { status: "ok" };
 	} catch (error) {
 		throw error;
 	}
@@ -186,8 +288,9 @@ export async function deleteFile(fileId: string, fileName: string) {
 		const fileRef = ref(storage, filePath);
 
 		await deleteObject(fileRef);
-	
+
 		return { status: "ok" };
 	} catch (error) {
+		throw error;
 	}
 }

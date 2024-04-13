@@ -22,6 +22,19 @@ export type IUpdateUser = {
 	file: File[]
 }
 
+export type IPost = {
+	postId: string
+	creator: string
+	likes: []
+	caption: string
+	tags: string[]
+	imageId: string
+	imageUrl: string
+	location: string
+	saved: string[]
+	createdAt: string
+}
+
 export type INewPost = {
 	userId: string
 	caption: string
@@ -59,4 +72,10 @@ export type INewUser = {
 	email: string
 	username: string
 	password: string
+}
+
+export type ISaves = {
+	savesId: string
+	postId: string
+	userId: string
 }
