@@ -1,9 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	createPost,
 	createUserAccount,
+	deletePost,
 	deleteSavedPost,
 	getCurrentUser,
+	getInfinitePosts,
 	getPostById,
 	getRecentPosts,
 	getSavedPosts,
@@ -68,6 +70,16 @@ export const useGetRecentPosts = () => {
 	});
 };
 
+// export const useGetPosts = () => {
+// 	return useInfiniteQuery({
+// 		queryKey: [QUERY_KEYS.GET_POSTS],
+// 		queryFn: getInfinitePosts,
+// 		getNextPageParam: (lastPage) => {
+// 			return lastPage[lastPage.length - 1].postId;
+// 		}
+// 	});
+// };
+
 export const useGetPostById = (postId?: string) => {
 	return useQuery({
 		queryKey: [QUERY_KEYS.GET_POST_BY_ID, postId],
@@ -81,6 +93,25 @@ export const useGetUserPosts = (userId?: string) => {
 		queryKey: [QUERY_KEYS.GET_USER_POSTS, userId],
 		queryFn: () => getUserPosts(userId),
 		enabled: !!userId,
+	});
+};
+
+export const useDeletePost = () => {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ postId, imageId }: { postId?: string; imageId?: string }) =>
+			deletePost(postId, imageId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: [QUERY_KEYS.GET_RECENT_POSTS],
+			});
+			queryClient.invalidateQueries({
+				queryKey: [QUERY_KEYS.GET_POSTS],
+			});
+			queryClient.invalidateQueries({
+				queryKey: [QUERY_KEYS.GET_CURRENT_USER],
+			});
+		},
 	});
 };
 
@@ -111,7 +142,7 @@ export const useGetSavedPosts = (userId: string) => {
 		queryKey: [QUERY_KEYS.GET_SAVED_POSTS, userId],
 		queryFn: () => getSavedPosts(userId),
 	});
-}
+};
 
 export const useSavePost = () => {
 	const queryClient = useQueryClient();
@@ -135,7 +166,15 @@ export const useSavePost = () => {
 export const useDeleteSavedPost = () => {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (savedRecordId: string) => deleteSavedPost(savedRecordId),
+		mutationFn: ({
+			savedId,
+			userId,
+			postId,
+		}: {
+			savedId: string;
+			userId: string;
+			postId: string;
+		}) => deleteSavedPost(savedId, userId, postId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: [QUERY_KEYS.GET_RECENT_POSTS],

@@ -38,15 +38,15 @@ const PostCard = ({ post }: PostCardProps) => {
 					</div>
 				</div>
 
-				<Link
+				{/* <Link
 					to={`/update-post/${post.postId}`}
 					className={`${user.accountId !== userData.accountId && "hidden"}`}
 				>
 					<img src="assets/icons/edit.svg" alt="Edit Post" width={20} height={20} />
-				</Link>
+				</Link> */}
 			</div>
 
-			<Link to={`/post/${post.postId}`}>
+			<Link to={`/posts/${post.postId}`}>
 				<div className="small-medium lg:base-medium py-5">
 					<p>{post.caption}</p>
 					<ul className="flex gap-1 mt-2">

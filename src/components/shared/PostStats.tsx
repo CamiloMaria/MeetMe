@@ -9,7 +9,8 @@ import {
 	useGetCurrentUser,
 	useGetSavedPosts,
 } from "@/lib/react-query/queries";
-import { IPost, ISaves, IUser } from "@/types";
+import { IPost, ISaves } from "@/types";
+import Loader from "./Loader";
 
 type PostStatsProps = {
 	post: IPost;
@@ -24,13 +25,13 @@ const PostStats = ({ post, userId }: PostStatsProps) => {
 	const [isSaved, setIsSaved] = useState(false);
 
 	const { mutate: likePost } = useLikePost();
-	const { mutate: savePost } = useSavePost();
-	const { mutate: deleteSavePost } = useDeleteSavedPost();
+	const { mutate: savePost, isPending: isSavingPost } = useSavePost();
+	const { mutate: deleteSavePost, isPending: isDeletingSaved } = useDeleteSavedPost();
 
 	const { data: savedPost } = useGetSavedPosts(userId);
 	const { data: currentUser } = useGetCurrentUser();
 
-	const savedPostRecord = savedPost?.find((saved: ISaves) => saved.postId === post.postId);
+	const savedPostRecord = savedPost?.find((save: ISaves) => save.postId === post.postId);
 
 	useEffect(() => {
 		setIsSaved(!!savedPostRecord);
@@ -51,16 +52,37 @@ const PostStats = ({ post, userId }: PostStatsProps) => {
 		likePost({ postId: post.postId, likesArray });
 	};
 
-	const handleSavePost = (e: React.MouseEvent<HTMLImageElement, MouseEvent>) => {
+	const handleSavePost = async (e: React.MouseEvent<HTMLImageElement, MouseEvent>) => {
 		e.stopPropagation();
 
-		if (savedPostRecord) {
-			setIsSaved(false);
-			return deleteSavePost(savedPostRecord.savesId);
+		// If the post is currently saved, attempt to delete it.
+		if (isSaved && savedPostRecord) {
+			setIsSaved(false); // Optimistically set isSaved to false
+			deleteSavePost(
+				{ savedId: savedPostRecord.savesId, userId: userId, postId: post.postId },
+				{
+					onSuccess: () => {
+						// Handle successful deletion, if specific actions needed
+					},
+					onError: () => {
+						setIsSaved(true); // Revert state if deletion fails
+					},
+				}
+			);
+		} else {
+			setIsSaved(true); // Optimistically set isSaved to true
+			savePost(
+				{ userId: userId, postId: post.postId },
+				{
+					onSuccess: () => {
+						// Handle successful save, if specific actions needed
+					},
+					onError: () => {
+						setIsSaved(false); // Revert state if saving fails
+					},
+				}
+			);
 		}
-
-		savePost({ userId: userId, postId: post.postId });
-		setIsSaved(true);
 	};
 
 	const containerStyles = location.pathname.startsWith("/profile") ? "w-full" : "";
@@ -82,14 +104,22 @@ const PostStats = ({ post, userId }: PostStatsProps) => {
 			</div>
 
 			<div className="flex gap-2">
-				<img
-					src={isSaved ? "/assets/icons/saved.svg" : "/assets/icons/save.svg"}
-					alt="share"
-					width={20}
-					height={20}
-					className="cursor-pointer"
-					onClick={(e) => handleSavePost(e)}
-				/>
+				{isSavingPost || isDeletingSaved ? (
+					<Loader />
+				) : (
+					<img
+						src={isSaved ? "/assets/icons/saved.svg" : "/assets/icons/save.svg"}
+						alt="share"
+						width={20}
+						height={20}
+						className="cursor-pointer"
+						onClick={(e) => {
+							if (!isSavingPost && !isDeletingSaved) {
+								handleSavePost(e);
+							}
+						}}
+					/>
+				)}
 			</div>
 		</div>
 	);

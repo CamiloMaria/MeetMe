@@ -32,6 +32,7 @@ export type IPost = {
 	imageUrl: string
 	location: string
 	saved: string[]
+	userId: string
 	createdAt: string
 }
 
@@ -60,7 +61,6 @@ export type IUser = {
 	username: string
 	bio: string
 	likedPosts: string[]
-	posts: string[]
 	saves: string[]
 	imageId: string
 	imageUrl: string

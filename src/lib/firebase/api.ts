@@ -1,7 +1,19 @@
 import { INewPost, INewUser, IPost, ISaves, IUser } from "@/types";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth, fireStore, storage } from "./config";
-import { collection, doc, getDocs, limit, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
+import {
+	arrayRemove,
+	collection,
+	deleteDoc,
+	doc,
+	getDocs,
+	limit,
+	orderBy,
+	query,
+	setDoc,
+	updateDoc,
+	where,
+} from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 export async function createUserAccount(user: INewUser) {
@@ -82,10 +94,10 @@ export async function signInAccount(user: { email: string; password: string }) {
 export async function getCurrentUser(): Promise<IUser> {
 	try {
 		const user = auth.currentUser;
-		
+
 		if (!user) {
 			throw new Error("No user is currently logged in.");
-		} 
+		}
 
 		const usersRef = collection(fireStore, "users");
 		const q = query(usersRef, where("accountId", "==", user.uid));
@@ -216,7 +228,6 @@ export async function createPost(post: INewPost) {
 			imageId: uploadedFile.id,
 			imageUrl: uploadedFile.url,
 			location: post.location,
-			saved: [],
 			userId: user.accountId,
 			createdAt: new Date().toISOString(),
 		};
@@ -226,6 +237,21 @@ export async function createPost(post: INewPost) {
 		await saveToDatabase("posts", postId, postDoc);
 
 		return postDoc;
+	} catch (error) {
+		throw error;
+	}
+}
+
+export async function deletePost(postId?: string, imageId?: string) {
+	if (!postId || !imageId) throw Error;
+
+	try {
+		const postRef = doc(fireStore, "posts", postId);
+
+		await deleteFile(imageId, postId);
+		await deleteDoc(postRef);
+
+		return { status: "ok" };
 	} catch (error) {
 		throw error;
 	}
@@ -247,7 +273,7 @@ export async function likePost(postId: string, likesArray: string[]) {
 export async function getSavedPosts(userId: string) {
 	try {
 		const savesRef = collection(fireStore, "saves");
-		const q = query(savesRef, where("user", "==", userId));
+		const q = query(savesRef, where("userId", "==", userId));
 		const querySnapshot = await getDocs(q);
 
 		if (querySnapshot.empty) {
@@ -267,11 +293,12 @@ export async function savePost(userId: string, postId: string) {
 		const savesId = new Date().getTime().toString();
 		const saves = {
 			savesId,
-			user: userId,
-			savedPost: postId,
+			userId: userId,
+			postId: postId,
 		};
 
-		await saveToDatabase("saves", userId, saves);
+		await saveToDatabase("saves", savesId, saves);
+		await saveToDatabase("users", userId, { saves: [postId] }, false);
 
 		return saves;
 	} catch (error) {
@@ -279,9 +306,14 @@ export async function savePost(userId: string, postId: string) {
 	}
 }
 
-export async function deleteSavedPost(saveId: string) {
+export async function deleteSavedPost(saveId: string, userId: string, postId: string) {
 	try {
-		await saveToDatabase("saves", saveId, {});
+		const saveRef = doc(fireStore, "saves", saveId);
+		const userRef = doc(fireStore, "users", userId);
+		console.log(userId, postId);
+		await updateDoc(userRef, { saves: arrayRemove(postId) });
+
+		await deleteDoc(saveRef);
 
 		return { status: "ok" };
 	} catch (error) {
@@ -312,6 +344,29 @@ export async function deleteFile(fileId: string, fileName: string) {
 		await deleteObject(fileRef);
 
 		return { status: "ok" };
+	} catch (error) {
+		throw error;
+	}
+}
+
+export async function getInfinitePosts({ pageParam }: { pageParam: number }) {
+	try {
+		const postsRef = collection(fireStore, "posts");
+		const q = query(
+			postsRef,
+			orderBy("createdAt", "desc"),
+			limit(20),
+			where("createdAt", "<", pageParam)
+		);
+		const querySnapshot = await getDocs(q);
+
+		if (querySnapshot.empty) {
+			throw new Error("No posts found");
+		}
+
+		const posts = querySnapshot.docs.map((doc) => doc.data()) as IPost[];
+
+		return posts;
 	} catch (error) {
 		throw error;
 	}
