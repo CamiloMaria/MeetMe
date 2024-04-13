@@ -37,6 +37,12 @@ const SigninForm = () => {
 		const session = await signInAccount({
 			email: values.email,
 			password: values.password,
+		}).catch((error) => {
+			toast({
+				variant: "destructive",
+				title: "Ocurrió un error",
+				description: error.message,
+			});
 		});
 
 		if (!session) {

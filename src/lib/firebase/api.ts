@@ -1,7 +1,7 @@
 import { INewPost, INewUser, IPost, ISaves, IUser } from "@/types";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth, fireStore, storage } from "./config";
-import { collection, doc, getDocs, limit, orderBy, query, setDoc, where } from "firebase/firestore";
+import { collection, doc, getDocs, limit, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 export async function createUserAccount(user: INewUser) {
@@ -21,7 +21,6 @@ export async function createUserAccount(user: INewUser) {
 			username: user.username,
 			bio: "",
 			likedPosts: [],
-			posts: [],
 			saves: [],
 			imageId: "",
 			imageUrl: "",
@@ -29,7 +28,9 @@ export async function createUserAccount(user: INewUser) {
 		};
 
 		await saveToDatabase<any>("users", userId, userDoc);
-		localStorage.setItem("user", JSON.stringify(userDoc));
+
+		const token = await newAccount.user.getIdToken();
+		localStorage.setItem("user", JSON.stringify(token));
 
 		return newAccount;
 	} catch (error) {
@@ -40,10 +41,16 @@ export async function createUserAccount(user: INewUser) {
 export async function saveToDatabase<T extends { [key: string]: any }>(
 	collection: string,
 	docId: string,
-	data: T
+	data: T,
+	overwrite: boolean = true
 ) {
 	try {
-		await setDoc(doc(fireStore, collection, docId), data);
+		const docRef = doc(fireStore, collection, docId);
+		if (overwrite) {
+			await setDoc(docRef, data);
+		} else {
+			await updateDoc(docRef, data);
+		}
 		console.log(`Data saved to ${collection} with ID ${docId}`);
 	} catch (error) {
 		console.error(`Error saving data to ${collection}:`, error);
@@ -53,11 +60,18 @@ export async function saveToDatabase<T extends { [key: string]: any }>(
 
 export async function signInAccount(user: { email: string; password: string }) {
 	try {
-		const session = await signInWithEmailAndPassword(auth, user.email, user.password);
+		const session = await signInWithEmailAndPassword(auth, user.email, user.password).catch(
+			(error) => {
+				throw error;
+			}
+		);
 
 		if (!session) {
 			throw Error;
 		}
+
+		const token = await session.user.getIdToken();
+		localStorage.setItem("user", JSON.stringify(token));
 
 		return session;
 	} catch (error) {
@@ -68,10 +82,10 @@ export async function signInAccount(user: { email: string; password: string }) {
 export async function getCurrentUser(): Promise<IUser> {
 	try {
 		const user = auth.currentUser;
-
+		
 		if (!user) {
 			throw new Error("No user is currently logged in.");
-		}
+		} 
 
 		const usersRef = collection(fireStore, "users");
 		const q = query(usersRef, where("accountId", "==", user.uid));
@@ -176,6 +190,8 @@ export async function getPostById(postId?: string) {
 
 export async function createPost(post: INewPost) {
 	try {
+		const user = await getCurrentUser();
+
 		const uploadedFile = await uploadFile(post.file[0]);
 
 		if (!uploadedFile) {
@@ -201,8 +217,11 @@ export async function createPost(post: INewPost) {
 			imageUrl: uploadedFile.url,
 			location: post.location,
 			saved: [],
+			userId: user.accountId,
 			createdAt: new Date().toISOString(),
 		};
+
+		console.log(postDoc);
 
 		await saveToDatabase("posts", postId, postDoc);
 
@@ -214,7 +233,10 @@ export async function createPost(post: INewPost) {
 
 export async function likePost(postId: string, likesArray: string[]) {
 	try {
-		await saveToDatabase("posts", postId, { likes: likesArray });
+		const user = await getCurrentUser();
+
+		await saveToDatabase("posts", postId, { likes: likesArray }, false);
+		await saveToDatabase("users", user.accountId, { likedPosts: [postId] }, false);
 
 		return { status: "ok" };
 	} catch (error) {

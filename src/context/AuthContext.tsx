@@ -1,11 +1,8 @@
 import { getCurrentUser } from "@/lib/firebase/api";
+import { auth } from "@/lib/firebase/config";
 import { IContextType, IUser } from "@/types";
-import {
-	createContext,
-	useContext,
-	useEffect,
-	useState,
-} from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export const INITIAL_USER = {
@@ -31,74 +28,39 @@ const INITIAL_STATE = {
 	checkAuthUser: async () => false as boolean,
 };
 
-const AuthContext =
-	createContext<IContextType>(INITIAL_STATE);
+const AuthContext = createContext<IContextType>(INITIAL_STATE);
 
-const AuthProvider = ({
-	children,
-}: {
-	children: React.ReactNode;
-}) => {
+const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 	const [user, setUser] = useState<IUser>(INITIAL_USER);
-	const [isLoading, setIsLoading] =
-		useState<boolean>(false);
-	const [isAuthenticated, setIsAuthenticated] =
-		useState<boolean>(false);
-	const checkAuthUser = async () => {
-		setIsLoading(true);
-		try {
-			const {
-				accountId,
-				email,
-				name,
-				username,
-				bio,
-				likedPosts,
-				posts,
-				saves,
-				imageId,
-				imageUrl,
-				createdAt,
-			} = await getCurrentUser();
-
-			if (accountId) {
-				setUser({
-					accountId,
-					email,
-					name,
-					username,
-					bio,
-					likedPosts,
-					posts,
-					saves,
-					imageId,
-					imageUrl,
-					createdAt,
-				});
-				setIsAuthenticated(true);
-				return true;
-			}
-
-			return false;
-		} catch (error) {
-			console.error(error);
-		} finally {
-			setIsLoading(false);
-		}
-		return false;
-	};
+	const [isLoading, setIsLoading] = useState<boolean>(true);
+	const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		if (
-			localStorage.getItem("cookieFallback") === "[]" ||
-			localStorage.getItem("cookieFallback") === null
-		)
-			navigate("/sign-in");
+		const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+			if (firebaseUser) {
+				setIsLoading(true);
+				try {
+					const userDoc = await getCurrentUser();
+					setUser(userDoc);
+					setIsAuthenticated(true);
+				} catch (error) {
+					console.error("Error fetching user data:", error);
+				} finally {
+					setIsLoading(false);
+				}
+			} else {
+				// No user is signed in
+				navigate("/sign-in");
+				setIsAuthenticated(false);
+				setUser(INITIAL_USER);
+				setIsLoading(false);
+			}
+		});
 
-		checkAuthUser();
-	}, []);
+		return () => unsubscribe(); // Cleanup subscription
+	}, [navigate]);
 
 	const value = {
 		user,
@@ -106,14 +68,18 @@ const AuthProvider = ({
 		setUser,
 		isAuthenticated,
 		setIsAuthenticated,
-		checkAuthUser,
+		checkAuthUser: async () => {
+			const userDoc = await getCurrentUser();
+			if (userDoc) {
+				setUser(userDoc);
+				setIsAuthenticated(true);
+				return true;
+			}
+			return false;
+		},
 	};
 
-	return (
-		<AuthContext.Provider value={value}>
-			{children}
-		</AuthContext.Provider>
-	);
+	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export default AuthProvider;

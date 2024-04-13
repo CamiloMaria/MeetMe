@@ -18,9 +18,8 @@ type PostStatsProps = {
 
 const PostStats = ({ post, userId }: PostStatsProps) => {
 	const location = useLocation();
-	console.log(post.likes);
-	const likesList = post.likes.map((user: IUser) => user.accountId);
 
+	const likesList = post.likes || [];
 	const [likes, setLikes] = useState<string[]>(likesList);
 	const [isSaved, setIsSaved] = useState(false);
 
