@@ -6,6 +6,7 @@ import {
 	collection,
 	deleteDoc,
 	doc,
+	getDoc,
 	getDocs,
 	limit,
 	orderBy,
@@ -200,6 +201,24 @@ export async function getPostById(postId?: string) {
 	}
 }
 
+export async function getPostsByIds(postIds: string[]) {
+	try {
+		const postsRef = collection(fireStore, "posts");
+		const q = query(postsRef, where("postId", "in", postIds));
+		const querySnapshot = await getDocs(q);
+
+		if (querySnapshot.empty) {
+			throw new Error("No posts found");
+		}
+
+		const posts = querySnapshot.docs.map((doc) => doc.data()) as IPost[];
+
+		return posts;
+	} catch (error) {
+		throw error;
+	}
+}
+
 export async function createPost(post: INewPost) {
 	try {
 		const user = await getCurrentUser();
@@ -289,28 +308,40 @@ export async function getSavedPosts(userId: string) {
 }
 
 export async function savePost(userId: string, postId: string) {
-	try {
-		const savesId = new Date().getTime().toString();
-		const saves = {
-			savesId,
-			userId: userId,
-			postId: postId,
-		};
+    try {
+        const userDocRef = doc(fireStore, "users", userId);
+        const userDocSnap = await getDoc(userDocRef);
 
-		await saveToDatabase("saves", savesId, saves);
-		await saveToDatabase("users", userId, { saves: [postId] }, false);
+        if (!userDocSnap.exists()) {
+            throw new Error("User does not exist");
+        }
 
-		return saves;
-	} catch (error) {
-		throw error;
-	}
+        const user = userDocSnap.data();
+        const currentSaves = user.saves ? [...user.saves] : [];  
+        currentSaves.push(postId);  
+
+        await updateDoc(userDocRef, { saves: currentSaves });
+
+        const savesId = new Date().getTime().toString();  
+        const saves = {
+            savesId,
+            userId: userId,
+            postId: postId,
+        };
+        await saveToDatabase("saves", savesId, saves);
+
+        return saves;
+    } catch (error) {
+        console.error("Failed to save post:", error);
+        throw error;
+    }
 }
 
 export async function deleteSavedPost(saveId: string, userId: string, postId: string) {
 	try {
 		const saveRef = doc(fireStore, "saves", saveId);
 		const userRef = doc(fireStore, "users", userId);
-		console.log(userId, postId);
+
 		await updateDoc(userRef, { saves: arrayRemove(postId) });
 
 		await deleteDoc(saveRef);

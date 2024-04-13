@@ -18,18 +18,26 @@ export default {
 		extend: {
 			colors: {
 				"primary-500": "#5D6BFF",
-				"primary-600": "#5D5FEF",
+				"primary-400": "#7885FF",
+				"primary-600": "#4B58E6",
+				"primary-700": "#3D46B2",
+
 				"secondary-500": "#11A7FC",
-				"off-white": "#D0DFFF",
+				"secondary-400": "#33B7FF",
+				"secondary-600": "#0092DA",
+				"secondary-700": "#007CB8",
+
+				"off-white": "#F0F0FF",
 				"red": "#FF5A5A",
 				"dark-1": "#000000",
-				"dark-2": "#09090A",
-				"dark-3": "#101012",
-				"dark-4": "#1F1F22",
+				"dark-2": "#121214",
+				"dark-3": "#202024",
+				"dark-4": "#2C2C34",
+
 				"light-1": "#FFFFFF",
-				"light-2": "#EFEFEF",
-				"light-3": "#7878A3",
-				"light-4": "#5C5C7B",
+				"light-2": "#F5F5F5",
+				"light-3": "#D9DAE8",
+				"light-4": "#B8B9C7",
 			},
 			screens: {
 				xs: "480px",

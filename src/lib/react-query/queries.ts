@@ -7,6 +7,7 @@ import {
 	getCurrentUser,
 	getInfinitePosts,
 	getPostById,
+	getPostsByIds,
 	getRecentPosts,
 	getSavedPosts,
 	getUserById,
@@ -50,6 +51,13 @@ export const useGetUserById = (userId: string) => {
 		queryFn: () => getUserById(userId),
 	});
 };
+
+export const useGetPostsByIDs = (postIds: string[]) => {
+	return useQuery({
+		queryKey: [QUERY_KEYS.GET_POSTS_BY_IDS, postIds],
+		queryFn: () => getPostsByIds(postIds),
+	});
+}
 
 export const useCreatePost = () => {
 	const queryClient = useQueryClient();
