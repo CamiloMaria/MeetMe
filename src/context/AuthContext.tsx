@@ -3,7 +3,7 @@ import { auth } from "@/lib/firebase/config";
 import { IContextType, IUser } from "@/types";
 import { onAuthStateChanged } from "firebase/auth";
 import { createContext, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export const INITIAL_USER = {
 	accountId: "",
@@ -34,6 +34,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 	const [user, setUser] = useState<IUser>(INITIAL_USER);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+	const location = useLocation();
 
 	const navigate = useNavigate();
 
@@ -52,7 +53,11 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 				}
 			} else {
 				// No user is signed in
-				navigate("/sign-in");
+				if (location.pathname !== "/sign-in" && location.pathname !== "/sign-up") {
+					navigate("/sign-in");
+				} else {
+					navigate(location.pathname);
+				}
 				setIsAuthenticated(false);
 				setUser(INITIAL_USER);
 				setIsLoading(false);
