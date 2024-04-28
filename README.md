@@ -1,30 +1,48 @@
-# React + TypeScript + Vite
+# MeetMe - React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Introduction
+It is a social network like Instagram so that people can interact with each other and see users' posts. (Still in development phase)
 
-Currently, two official plugins are available:
+## Table of Contents
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Features](#features)
+- [Dependencies](#dependencies)
+- [Configuration](#configuration)
+- [Contributors](#contributors)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Installation
+To set up the project locally, follow these steps:
+1. Clone the repository:
+   ```bash
+   git clone https://yourrepositorylink.com/MeetMe.git
+   cd MeetMe
+   npm install
+   ```
+## Usage
+Start the development server with:
+  ```bash
+   npm run dev
+  ```
+This command launches the Vite server, enabling Hot Module Replacement for real-time updates during development.
 
-## Expanding the ESLint configuration
+## Features
+- React 17+ integration with Vite for modern web development.
+- Hot Module Replacement (HMR) to instantly reflect changes without full page reloads.
+- Extensive ESLint and TypeScript configuration for robust type checking and linting.
+- Optimized for high performance and fast development cycles.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## Dependencies
+- React
+- Vite
+- TypeScript
+- ESLint
+- firebase
+- zod
 
-- Configure the top-level `parserOptions` property like this:
+## Configuration
+Adjustable ESLint and TypeScript settings provide flexibility to suit various development styles and requirements. See the eslintrc.cjs and tsconfig.json files for detailed configurations.
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
-
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+## Contributors
+- Camilo Maria
